@@ -1,0 +1,99 @@
+/** @format */
+
+import Select from 'react-select';
+import { useEffect, useState } from 'react';
+import { Modal, Button, Form } from 'react-bootstrap';
+import { useForm } from 'react-hook-form';
+import { commentsServices } from '../../Services/commentsServices';
+import { moviesServices } from '../../Services/moviesServices';
+import UpdateSelect from '../../Common/UpdateSelect';
+
+const UpdateComment = ({
+	show,
+	setShow,
+	setUpdate,
+	updateData,
+	movieOptions,
+}) => {
+	const { handleSubmit, register, control } = useForm();
+
+	const [movieDefaultvalue, setMovieDefaultValue] = useState(null);
+
+	const handleClose = () => setShow(false);
+
+	useEffect(() => {
+		moviesServices
+			.getOne(updateData.movieid)
+			.then(res => {
+				setMovieDefaultValue({
+					value: res.data[0].id,
+					label: res.data[0].name,
+				});
+			})
+			.catch(err => console.log(err));
+	}, [updateData]);
+
+	const onSubmit = data => {
+		commentsServices
+			.update(updateData.id, {
+				...data,
+				movieId: data.movieId?.value || movieDefaultvalue.value,
+			})
+			.then(res => {
+				console.log(res);
+				setUpdate(new Date());
+				setShow(false);
+			})
+			.catch(err => console.log(err));
+	};
+
+	return (
+		<Modal show={show} onHide={handleClose}>
+			<form onSubmit={handleSubmit(onSubmit)}>
+				<Modal.Header closeButton>
+					<Modal.Title>Uredite komentar</Modal.Title>
+				</Modal.Header>
+
+				<Modal.Body>
+					<Form.Label>Film</Form.Label>
+					{movieDefaultvalue ? (
+						<UpdateSelect
+							control={control}
+							defaultValue={movieDefaultvalue}
+							register={register}
+							options={movieOptions}
+							valueName='movieId'
+						/>
+					) : (
+						<Select isDisabled />
+					)}
+
+					<Form.Label>Text</Form.Label>
+					<Form.Control
+						type='text'
+						placeholder='Text'
+						defaultValue={updateData.text}
+						{...register('text')}
+					/>
+					<Form.Label>Ocjena</Form.Label>
+					<Form.Control
+						type='text'
+						placeholder='Ocjena'
+						defaultValue={updateData.review}
+						{...register('review')}
+					/>
+				</Modal.Body>
+
+				<Modal.Footer>
+					<Button variant='secondary' onClick={handleClose}>
+						Odustani
+					</Button>
+
+					<input value='Uredi' type='submit' className='btn btn-dark' />
+				</Modal.Footer>
+			</form>
+		</Modal>
+	);
+};
+
+export default UpdateComment;
